@@ -43,8 +43,15 @@ function displayNotes(notes) {
         const body = document.createElement("p");
         body.textContent = note.body;
 
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.textContent = "Delete";
+        deleteButton.addEventListener("click", () => deleteNote(note.id, item));
+
         item.appendChild(title);
         item.appendChild(body);
+        item.appendChild(deleteButton);
+
         notesList.appendChild(item);
     });
 }
@@ -140,6 +147,44 @@ async function createNote(event) {
         console.error("Error creating note:", error);
     } finally {
         submitButton.disabled = false;
+    }
+}
+
+async function deleteNote(noteId, noteElement) {
+    const confirmed = confirm("Are you sure you want to delete this note?");
+
+    if (!confirmed) {
+        return;
+    }
+
+    const deleteButton = noteElement.querySelector("button");
+    deleteButton.disabled = true;
+    statusMessage.className = "";
+    statusMessage.textContent = "Deleting note...";
+
+    try {
+        const { status } = await request(`${API_URL}/${noteId}`, {
+            method: "DELETE"
+        });
+
+        noteElement.remove();
+
+        if (notesList.children.length === 0) {
+            const message = document.createElement("li");
+            message.textContent = "No notes found.";
+            notesList.appendChild(message);
+        }
+
+        statusMessage.className = "success";
+        statusMessage.textContent =
+            `Note deleted successfully (HTTP ${status}).`;
+    } catch (error) {
+        statusMessage.className = "error";
+        statusMessage.textContent =
+            "Unable to delete the note. Please try again.";
+
+        console.error("Error deleting note:", error);
+        deleteButton.disabled = false;
     }
 }
 
